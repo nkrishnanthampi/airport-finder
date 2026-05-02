@@ -1,6 +1,7 @@
 {
   "name": "airport-finder",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,7 +11,9 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
+    "dotenv": "^17.4.2",
     "next": "^16.2.4",
+    "pg": "^8.20.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

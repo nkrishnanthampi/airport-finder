@@ -1,5 +1,4 @@
 import { sql } from "@/lib/db";
-import { routes } from "@/lib/routes";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +7,7 @@ export default async function Home({ searchParams }) {
   const selectedCity = params?.city ?? "";
   const selectedAirport = params?.airport ?? "";
 
-  // Always fetch the city list for the dropdown
+  // City dropdown — UK only
   const cities = await sql`
     SELECT DISTINCT airport_city
     FROM airport_master
@@ -16,21 +15,19 @@ export default async function Home({ searchParams }) {
     ORDER BY airport_city
   `;
 
-  // If a city is selected, fetch its airports
+  // Airports in the selected city
   let airportsInCity = [];
   if (selectedCity) {
     airportsInCity = await sql`
       SELECT iata_code, airport_name
       FROM airport_master
       WHERE airport_city = ${selectedCity}
+        AND airport_country_code = 'GBR'
       ORDER BY airport_name
     `;
   }
 
-  // Decide which airport is "active":
-  //   - if user picked one explicitly, use that
-  //   - else if city has exactly one airport, auto-pick it
-  //   - else no active airport yet (user must choose)
+  // Active airport: explicit choice, or auto-pick if city has only one
   let activeAirport = null;
   if (selectedAirport) {
     activeAirport = airportsInCity.find((a) => a.iata_code === selectedAirport) ?? null;
@@ -38,19 +35,16 @@ export default async function Home({ searchParams }) {
     activeAirport = airportsInCity[0];
   }
 
-  // If we have an active airport, find airlines that fly from it
+  // Real query: airlines flying out of the active airport
   let airlines = [];
   if (activeAirport) {
-    const relevantRoutes = routes.filter((r) => r.fromIata === activeAirport.iata_code);
-    const airlineIatas = [...new Set(relevantRoutes.map((r) => r.airlineIata))];
-    if (airlineIatas.length > 0) {
-      airlines = await sql`
-        SELECT iata_code, airline_name
-        FROM airline_master
-        WHERE iata_code = ANY(${airlineIatas})
-        ORDER BY airline_name
-      `;
-    }
+    airlines = await sql`
+      SELECT DISTINCT al.iata_code, al.airline_name
+      FROM routes r
+      JOIN airline_master al ON r.airline_id = al.id
+      WHERE r.source_iata = ${activeAirport.iata_code}
+      ORDER BY al.airline_name
+    `;
   }
 
   return (
@@ -72,7 +66,6 @@ export default async function Home({ searchParams }) {
         <button type="submit">Go</button>
       </form>
 
-      {/* Show airport choice list when city has >1 airports and none picked yet */}
       {selectedCity && airportsInCity.length > 1 && !activeAirport && (
         <section style={{ marginBottom: "2rem" }}>
           <h2>{selectedCity} has multiple airports — pick one</h2>
@@ -88,7 +81,6 @@ export default async function Home({ searchParams }) {
         </section>
       )}
 
-      {/* Show airlines for the active airport */}
       {activeAirport && (
         <section>
           <h2>
@@ -102,7 +94,7 @@ export default async function Home({ searchParams }) {
             </p>
           )}
           {airlines.length === 0 ? (
-            <p>No airlines found in our (fake) routes data for this airport.</p>
+            <p>No airlines found for this airport.</p>
           ) : (
             <table style={{ borderCollapse: "collapse", width: "100%" }}>
               <thead>
