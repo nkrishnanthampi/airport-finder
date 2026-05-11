@@ -116,7 +116,7 @@ export default async function Home({ searchParams }) {
         {selectedCity && airportsInCity.length > 1 && !activeAirport && (
           <div className="max-w-xl">
             <h2 className="text-slate-600 font-medium mb-3 text-sm uppercase tracking-wider">
-              Airports in {selectedCity}
+              Select an airport to see all airlines that fly out of here {selectedCity}
             </h2>
             <div className="flex flex-col gap-2">
               {airportsInCity.map((a) => (
@@ -140,7 +140,7 @@ export default async function Home({ searchParams }) {
         {activeAirport && !activeAirline && (
           <div className="max-w-xl">
             <h2 className="text-slate-600 font-medium mb-3 text-sm uppercase tracking-wider">
-              {airlines.length} airline{airlines.length !== 1 ? "s" : ""} · {activeAirport.airport_name}
+              There are {airlines.length} airlines that operate from here. Click on an airline to see destinations {airlines.length !== 1 ? "s" : ""} · {activeAirport.airport_name}
             </h2>
             {airlines.length === 0 ? (
               <p className="text-slate-500">No airlines found for this airport.</p>
