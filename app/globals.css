@@ -1,209 +1,26 @@
-/* ---------- Reset & base ---------- */
-
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@import "tailwindcss";
 
 :root {
-  --bg: #ffffff;
-  --surface: #f9fafb;
-  --surface-hover: #f3f4f6;
-  --border: #e5e7eb;
-  --text: #111827;
-  --text-muted: #6b7280;
-  --text-subtle: #9ca3af;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-bg: #eff6ff;
-
-  --radius: 6px;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
-html, body {
-  height: 100%;
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--text);
-  background: var(--bg);
-  -webkit-font-smoothing: antialiased;
-}
-
-a {
-  color: var(--accent);
-  text-decoration: none;
-}
-a:hover { color: var(--accent-hover); }
-
-/* ---------- Page layout ---------- */
-
-.page {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 1.5rem 2rem;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.page-header h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.page-header p {
-  color: var(--text-muted);
-  margin-top: 0.25rem;
-}
-
-.page-footer {
-  margin-top: auto;
-  padding-top: 1rem;
-  font-size: 0.8125rem;
-  color: var(--text-subtle);
-  border-top: 1px solid var(--border);
-}
-
-/* ---------- The selector area ---------- */
-
-.selectors {
-  display: grid;
-  grid-template-columns: 280px 280px 1fr;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-.column-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 0.5rem;
-}
-
-/* ---------- Inputs ---------- */
-
-select {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9375rem;
-  font-family: inherit;
-  color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-select:hover { border-color: var(--text-subtle); }
-select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-bg);
-}
-
-/* ---------- Airport list (when city has >1 airport) ---------- */
-
-.airport-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.airport-item {
-  display: block;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  background: var(--bg);
-  font-size: 0.9375rem;
-  transition: background 0.15s, border-color 0.15s;
-}
-.airport-item:hover {
-  background: var(--surface-hover);
-  border-color: var(--text-subtle);
-  color: var(--text);
-}
-.airport-item.selected {
-  background: var(--accent-bg);
-  border-color: var(--accent);
-  color: var(--accent);
-  font-weight: 500;
-}
-
-.airport-iata {
-  color: var(--text-subtle);
-  font-size: 0.8125rem;
-  font-weight: 400;
-  margin-left: 0.5rem;
-}
-
-.airport-item.selected .airport-iata { color: var(--accent); }
-
-/* ---------- Airlines panel ---------- */
-
-.airlines-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  min-height: 200px;
-}
-
-.airlines-panel h2 {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: var(--text);
-}
-
-.airlines-panel .count {
-  color: var(--text-muted);
-  font-weight: 400;
-  margin-left: 0.5rem;
-}
-
-.airlines-list {
-  list-style: none;
-  column-count: 4;
-  column-gap: 1.5rem;
-  font-size: 0.875rem;
-}
-
-.airlines-list li {
-  padding: 0.25rem 0;
-  break-inside: avoid;
-  color: var(--text);
-}
-
-.empty-state {
-  color: var(--text-muted);
-  font-size: 0.9375rem;
-  padding: 2rem 0;
-  text-align: center;
-}
-
-/* ---------- Responsive ---------- */
-
-@media (max-width: 900px) {
-  .selectors {
-    grid-template-columns: 1fr;
-  }
-  .airlines-list { column-count: 2; }
-}
-
-@media (max-width: 500px) {
-  .page { padding: 1rem; }
-  .airlines-list { column-count: 1; }
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
 }
