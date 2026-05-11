@@ -69,7 +69,7 @@ export default async function Home({ searchParams }) {
 
   return (
     <main style={{ padding: "2rem", fontFamily: "system-ui", maxWidth: "800px" }}>
-      <h1>Airlines from UK airports</h1>
+      <h1>Destinations that airlines fly to from a specific city </h1>
 
       <div style={{ marginBottom: "2rem" }}>
         <label>
