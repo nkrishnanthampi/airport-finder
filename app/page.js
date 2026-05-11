@@ -140,7 +140,7 @@ export default async function Home({ searchParams }) {
         {activeAirport && !activeAirline && (
           <div className="max-w-xl">
             <h2 className="text-slate-600 font-medium mb-3 text-sm uppercase tracking-wider">
-              There are {airlines.length} airlines that operate from here. Click on an airline to see destinations {airlines.length !== 1 ? "s" : ""} · {activeAirport.airport_name}
+              Click on an airline to see where they fly to from here 
             </h2>
             {airlines.length === 0 ? (
               <p className="text-slate-500">No airlines found for this airport.</p>
