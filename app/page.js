@@ -1,4 +1,5 @@
 import { sql } from "@/lib/db";
+import CitySelect from "./city-select";
 
 export const dynamic = "force-dynamic";
 
@@ -6,6 +7,7 @@ export default async function Home({ searchParams }) {
   const params = await searchParams;
   const selectedCity = params?.city ?? "";
   const selectedAirport = params?.airport ?? "";
+  const selectedAirline = params?.airline ?? "";
 
   // City dropdown — UK only
   const cities = await sql`
@@ -35,7 +37,7 @@ export default async function Home({ searchParams }) {
     activeAirport = airportsInCity[0];
   }
 
-  // Real query: airlines flying out of the active airport
+  // Airlines flying out of the active airport
   let airlines = [];
   if (activeAirport) {
     airlines = await sql`
@@ -47,24 +49,34 @@ export default async function Home({ searchParams }) {
     `;
   }
 
+  // Destinations for the selected airline from the active airport
+  let activeAirline = null;
+  let destinations = [];
+  if (activeAirport && selectedAirline) {
+    activeAirline = airlines.find((a) => a.iata_code === selectedAirline) ?? null;
+    if (activeAirline) {
+      destinations = await sql`
+        SELECT am.iata_code, am.airport_name, am.airport_city, am.airport_country_code
+        FROM routes r
+        JOIN airport_master am ON r.destination_iata = am.iata_code
+        JOIN airline_master al ON r.airline_id = al.id
+        WHERE r.source_iata = ${activeAirport.iata_code}
+          AND al.iata_code = ${selectedAirline}
+        ORDER BY am.airport_city, am.airport_name
+      `;
+    }
+  }
+
   return (
     <main style={{ padding: "2rem", fontFamily: "system-ui", maxWidth: "800px" }}>
       <h1>Airlines from UK airports</h1>
 
-      <form method="get" style={{ marginBottom: "2rem" }}>
+      <div style={{ marginBottom: "2rem" }}>
         <label>
           City:{" "}
-          <select name="city" defaultValue={selectedCity}>
-            <option value="">-- choose a city --</option>
-            {cities.map((c) => (
-              <option key={c.airport_city} value={c.airport_city}>
-                {c.airport_city}
-              </option>
-            ))}
-          </select>
-        </label>{" "}
-        <button type="submit">Go</button>
-      </form>
+          <CitySelect cities={cities} selectedCity={selectedCity} />
+        </label>
+      </div>
 
       {selectedCity && airportsInCity.length > 1 && !activeAirport && (
         <section style={{ marginBottom: "2rem" }}>
@@ -81,7 +93,7 @@ export default async function Home({ searchParams }) {
         </section>
       )}
 
-      {activeAirport && (
+      {activeAirport && !activeAirline && (
         <section>
           <h2>
             Airlines flying from {activeAirport.airport_name} ({activeAirport.iata_code})
@@ -105,9 +117,53 @@ export default async function Home({ searchParams }) {
               </thead>
               <tbody>
                 {airlines.map((a) => (
-                  <tr key={a.iata_code}>
-                    <td style={td}>{a.airline_name}</td>
+                  <tr key={a.iata_code} style={{ cursor: "pointer" }}>
+                    <td style={td}>
+                      <a
+                        href={`?city=${encodeURIComponent(selectedCity)}&airport=${activeAirport.iata_code}&airline=${a.iata_code}`}
+                        style={{ textDecoration: "none", color: "#0070f3" }}
+                      >
+                        {a.airline_name}
+                      </a>
+                    </td>
                     <td style={td}>{a.iata_code}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+      )}
+
+      {activeAirport && activeAirline && (
+        <section>
+          <h2>
+            {activeAirline.airline_name} destinations from {activeAirport.airport_name} ({activeAirport.iata_code})
+          </h2>
+          <p>
+            <a href={`?city=${encodeURIComponent(selectedCity)}&airport=${activeAirport.iata_code}`}>
+              ← back to airlines at {activeAirport.airport_name}
+            </a>
+          </p>
+          {destinations.length === 0 ? (
+            <p>No destinations found.</p>
+          ) : (
+            <table style={{ borderCollapse: "collapse", width: "100%" }}>
+              <thead>
+                <tr>
+                  <th style={th}>City</th>
+                  <th style={th}>Airport</th>
+                  <th style={th}>IATA</th>
+                  <th style={th}>Country</th>
+                </tr>
+              </thead>
+              <tbody>
+                {destinations.map((d) => (
+                  <tr key={d.iata_code}>
+                    <td style={td}>{d.airport_city}</td>
+                    <td style={td}>{d.airport_name}</td>
+                    <td style={td}>{d.iata_code}</td>
+                    <td style={td}>{d.airport_country_code}</td>
                   </tr>
                 ))}
               </tbody>
