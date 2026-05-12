@@ -169,8 +169,7 @@ export default async function Home({ searchParams }) {
         {activeAirport && activeAirline && (
           <div>
             <h2 className="text-slate-600 font-medium mb-3 text-sm uppercase tracking-wider">
-              {destinations.length} destination{destinations.length !== 1 ? "s" : ""} · {activeAirline.airline_name} from {activeAirport.iata_code}
-            </h2>
+              Click on the destination{destinations.length !== 1 ? "s" : ""} to see departure times</h2>
             {destinations.length === 0 ? (
               <p className="text-slate-500">No destinations found.</p>
             ) : (
