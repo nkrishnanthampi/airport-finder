@@ -75,6 +75,9 @@ export default async function Home({ searchParams }) {
         <div className="flex items-center gap-2 text-sm">
           <span className="text-blue-300">City</span>
           <CitySelect cities={cities} selectedCity={selectedCity} />
+          {!selectedCity && (
+            <span className="text-blue-300 italic"> Select a city to see where all you can fly to from here!</span>
+          )}
         </div>
       </header>
 

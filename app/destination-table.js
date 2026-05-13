@@ -30,6 +30,7 @@ export default function DestinationTable({ destinations, city, iata, airportName
             <tr
               key={d.iata_code}
               onClick={() => openDepartures(d)}
+              title={`Click for live departure timings to ${d.airport_name} in the next 12 hours`}
               className={`cursor-pointer hover:bg-blue-50${i > 0 ? " border-t border-slate-100" : ""}`}
             >
               <td className="px-4 py-3 font-medium text-slate-700">{d.airport_city}</td>
