@@ -75,9 +75,6 @@ export default async function Home({ searchParams }) {
         <div className="flex items-center gap-2 text-sm">
           <span className="text-blue-300">City</span>
           <CitySelect cities={cities} selectedCity={selectedCity} />
-          {!selectedCity && (
-            <span className="text-blue-300 italic"> Select a city to see where all you can fly to from here!</span>
-          )}
         </div>
       </header>
 
@@ -112,7 +109,7 @@ export default async function Home({ searchParams }) {
         {!selectedCity && (
           <div className="flex flex-col items-center justify-center h-full text-center gap-3">
             <span className="text-5xl">✈</span>
-            <p className="text-slate-500 text-lg">Select a city above to get started</p>
+            <p className="text-slate-500 text-lg">Select a city to see where all you can fly to from here!</p>
           </div>
         )}
 
@@ -120,7 +117,7 @@ export default async function Home({ searchParams }) {
         {selectedCity && airportsInCity.length > 1 && !activeAirport && (
           <div className="max-w-xl">
             <h2 className="text-slate-600 font-medium mb-3 text-sm uppercase tracking-wider">
-              Select an airport to see all airlines that fly out of here {selectedCity}
+              Select an airport to see all airlines that fly out of here
             </h2>
             <div className="flex flex-col gap-2">
               {airportsInCity.map((a) => (
@@ -143,12 +140,11 @@ export default async function Home({ searchParams }) {
         {/* Airlines list */}
         {activeAirport && !activeAirline && (
           <div className="max-w-xl">
-            <h2 className="text-slate-600 font-medium mb-3 text-sm uppercase tracking-wider">
-              Click on an airline to see where they fly to from here 
-            </h2>
             {airlines.length === 0 ? (
               <p className="text-slate-500">No airlines found for this airport.</p>
             ) : (
+              <>
+              <p className="text-slate-500">Click on the airline to see where they fly to from here</p>
               <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
                 {airlines.map((a, i) => (
                   <a
@@ -164,6 +160,7 @@ export default async function Home({ searchParams }) {
                   </a>
                 ))}
               </div>
+            </>
             )}
           </div>
         )}
