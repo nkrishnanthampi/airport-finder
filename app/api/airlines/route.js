@@ -6,32 +6,50 @@ async function fetchFaresByAirline(sourceIata, destIata) {
   const token = process.env.TRAVELPAYOUTS_TOKEN;
   if (!token) return {};
 
-  const url = `https://api.travelpayouts.com/v1/prices/calendar?origin=${sourceIata}&destination=${destIata}&currency=gbp&calendar_type=departure_date`;
-  let res;
+  const headers = { "x-access-token": token };
+
+  // Primary: calendar endpoint
   try {
-    res = await fetch(url, {
-      headers: { "x-access-token": token },
-      next: { revalidate: 3600 },
+    const url = `https://api.travelpayouts.com/v1/prices/calendar?origin=${sourceIata}&destination=${destIata}&currency=gbp&calendar_type=departure_date`;
+    const res = await fetch(url, { headers, next: { revalidate: 3600 } });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.data && Object.keys(data.data).length > 0) {
+        const faresByAirline = {};
+        Object.values(data.data).forEach((entry) => {
+          const al = entry.airline;
+          if (!al) return;
+          if (faresByAirline[al] === undefined || entry.price < faresByAirline[al]) {
+            faresByAirline[al] = entry.price;
+          }
+        });
+        return faresByAirline;
+      }
+    }
+  } catch {
+    // fall through to fallback
+  }
+
+  // Fallback: latest prices endpoint (broader route coverage)
+  try {
+    const url = `https://api.travelpayouts.com/v2/prices/latest?origin=${sourceIata}&destination=${destIata}&currency=gbp&limit=30&sorting=price`;
+    const res = await fetch(url, { headers, next: { revalidate: 3600 } });
+    if (!res.ok) return {};
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.data)) return {};
+
+    const faresByAirline = {};
+    data.data.forEach((entry) => {
+      const al = entry.airline;
+      if (!al) return;
+      if (faresByAirline[al] === undefined || entry.price < faresByAirline[al]) {
+        faresByAirline[al] = entry.price;
+      }
     });
+    return faresByAirline;
   } catch {
     return {};
   }
-
-  if (!res.ok) return {};
-
-  const data = await res.json();
-  if (!data.success || !data.data) return {};
-
-  const faresByAirline = {};
-  Object.values(data.data).forEach((entry) => {
-    const al = entry.airline;
-    if (!al) return;
-    if (faresByAirline[al] === undefined || entry.price < faresByAirline[al]) {
-      faresByAirline[al] = entry.price;
-    }
-  });
-
-  return faresByAirline;
 }
 
 export async function GET(request) {
