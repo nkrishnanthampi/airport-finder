@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import DeparturesModal from "./departures-modal";
+import AirlinesModal from "./airlines-modal";
 
-export default function DestinationTable({ destinations, city, iata, airportName, airlineIata, airline }) {
+export default function AllDestinationsTable({ destinations, sourceCity }) {
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState(null);
 
@@ -18,14 +18,11 @@ export default function DestinationTable({ destinations, city, iata, airportName
   return (
     <>
       {selected && (
-        <DeparturesModal
-          city={city}
-          airport={airportName}
-          iata={iata}
-          airline={airline}
-          airlineIata={airlineIata}
-          destination={selected.airport_city}
+        <AirlinesModal
+          sourceCity={sourceCity}
+          destCity={selected.airport_city}
           destIata={selected.iata_code}
+          destAirport={selected.airport_name}
           onClose={() => setSelected(null)}
         />
       )}
@@ -74,7 +71,7 @@ export default function DestinationTable({ destinations, city, iata, airportName
                   <tr
                     key={d.iata_code}
                     onClick={() => setSelected(d)}
-                    title={`Click for live departure times to ${d.airport_name} in the next 12 hours`}
+                    title={`Click to see all airlines flying from ${sourceCity} to ${d.airport_city}`}
                     className={`cursor-pointer hover:bg-sky-50 transition-colors group${i > 0 ? " border-t border-slate-100" : ""}${i % 2 === 1 ? " bg-slate-50/40" : ""}`}
                   >
                     <td className="px-4 py-3 font-semibold text-slate-800">{d.airport_city}</td>
