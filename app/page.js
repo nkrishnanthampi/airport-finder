@@ -10,10 +10,10 @@ export async function generateMetadata({ searchParams }) {
   const airport = params?.airport ?? "";
   const mode = params?.mode ?? "";
 
-  if (!city) return { title: "Airport Finder" };
-  if (mode === "all") return { title: `All destinations from ${city} | Airport Finder` };
-  if (airport) return { title: `Destinations from ${airport} | Airport Finder` };
-  return { title: `Flying from ${city} | Airport Finder` };
+  if (!city) return { title: "Airline Finder" };
+  if (mode === "all") return { title: `All destinations from ${city} | Airline Finder` };
+  if (airport) return { title: `Destinations from ${airport} | Airline Finder` };
+  return { title: `Flying from ${city} | Airline Finder` };
 }
 
 export default async function Home({ searchParams }) {
@@ -83,7 +83,7 @@ export default async function Home({ searchParams }) {
             <span className="text-sm">✈</span>
           </div>
           <div className="leading-tight hidden sm:block">
-            <span className="font-bold tracking-tight text-sm block font-display">Airport Finder</span>
+            <span className="font-bold tracking-tight text-sm block font-display">Airline Finder</span>
             <span className="text-sky-300 text-xs">UK departures</span>
           </div>
         </a>
@@ -228,7 +228,7 @@ export default async function Home({ searchParams }) {
                 <p className="mt-2">No destinations found for {activeAirport.airport_name}.</p>
               </div>
             ) : (
-              <AllDestinationsTable destinations={airportDestinations} sourceCity={selectedCity} />
+              <AllDestinationsTable destinations={airportDestinations} sourceCity={selectedCity} sourceIata={activeAirport.iata_code} />
             )}
           </div>
         )}

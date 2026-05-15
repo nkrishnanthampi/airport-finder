@@ -20,7 +20,7 @@ function Skeleton() {
   );
 }
 
-export default function AirlinesModal({ sourceCity, destCity, destIata, destAirport, onClose }) {
+export default function AirlinesModal({ sourceCity, sourceIata, destCity, destIata, destAirport, onClose }) {
   const [airlines, setAirlines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -78,61 +78,66 @@ export default function AirlinesModal({ sourceCity, destCity, destIata, destAirp
         </div>
       )}
 
-      {!loading && !error && airlines.length > 0 && (
-        <div className="space-y-2">
-          {airlines.map((a) => (
-            <div
-              key={`${a.iata_code}-${a.source_iata}`}
-              className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-sky-200 hover:bg-sky-50/50 transition-all"
+      {!loading && !error && airlines.length > 0 && (() => {
+        const primary = sourceIata ? airlines.filter((a) => a.source_iata === sourceIata) : [];
+        const others  = sourceIata ? airlines.filter((a) => a.source_iata !== sourceIata) : airlines;
+
+        const renderRow = (a) => (
+          <div
+            key={`${a.iata_code}-${a.source_iata}`}
+            className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-sky-200 hover:bg-sky-50/50 transition-all"
+          >
+            <img
+              src={`https://pics.avs.io/64/64/${a.iata_code}.png`}
+              alt={a.airline_name}
+              className="w-10 h-10 rounded-full object-contain bg-white border border-slate-100 shrink-0"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                e.currentTarget.nextSibling.style.display = "flex";
+              }}
+            />
+            <span
+              style={{ display: "none" }}
+              className="w-10 h-10 rounded-full bg-slate-100 items-center justify-center text-slate-500 font-mono font-bold text-xs shrink-0"
             >
-              <img
-                src={`https://pics.avs.io/64/64/${a.iata_code}.png`}
-                alt={a.airline_name}
-                className="w-10 h-10 rounded-full object-contain bg-white border border-slate-100 shrink-0"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                  e.currentTarget.nextSibling.style.display = "flex";
-                }}
-              />
-              <span
-                style={{ display: "none" }}
-                className="w-10 h-10 rounded-full bg-slate-100 items-center justify-center text-slate-500 font-mono font-bold text-xs shrink-0"
-              >
-                {a.iata_code}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-800 text-sm">{a.airline_name}</p>
-                <p className="text-xs text-slate-500 truncate">{a.source_airport}</p>
-              </div>
-              {a.price !== null ? (
-                <div className="text-right shrink-0">
-                  <a
-                    href={a.booking_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-green-700 font-bold text-base hover:underline"
-                  >
-                    £{a.price}
-                  </a>
-                  <p className="text-xs text-slate-400">one-way</p>
-                </div>
-              ) : (
-                <a
-                  href={a.booking_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sky-600 text-sm hover:underline shrink-0"
-                >
-                  Search →
-                </a>
-              )}
+              {a.iata_code}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-slate-800 text-sm">{a.airline_name}</p>
+              <p className="text-xs text-slate-500 truncate">{a.source_airport}</p>
             </div>
-          ))}
-          <p className="text-xs text-slate-400 text-center pt-2 pb-1">
-            Lowest fares across the next 30 days · per person, one-way
-          </p>
-        </div>
-      )}
+            {a.price !== null ? (
+              <div className="text-right shrink-0">
+                <a href={a.booking_link} target="_blank" rel="noopener noreferrer" className="text-green-700 font-bold text-base hover:underline">
+                  £{a.price}
+                </a>
+                <p className="text-xs text-slate-400">one-way</p>
+              </div>
+            ) : (
+              <a href={a.booking_link} target="_blank" rel="noopener noreferrer" className="text-sky-600 text-sm hover:underline shrink-0">
+                Search Fares →
+              </a>
+            )}
+          </div>
+        );
+
+        return (
+          <div className="space-y-2">
+            {primary.map(renderRow)}
+            {primary.length > 0 && others.length > 0 && (
+              <div className="flex items-center gap-2 py-1">
+                <div className="flex-1 h-px bg-slate-200" />
+                <span className="text-xs text-slate-400">also from {sourceCity}</span>
+                <div className="flex-1 h-px bg-slate-200" />
+              </div>
+            )}
+            {others.map(renderRow)}
+            <p className="text-xs text-slate-400 text-center pt-2 pb-1">
+              Lowest fares across the next 30 days · per person, one-way
+            </p>
+          </div>
+        );
+      })()}
     </Modal>
   );
 }

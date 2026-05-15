@@ -18,7 +18,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata = {
-  title: "Airport Finder",
+  title: "Airline Finder",
   description: "Find airlines and destinations from UK airports",
 };
 

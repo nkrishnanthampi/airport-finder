@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import AirlinesModal from "./airlines-modal";
 
-export default function AllDestinationsTable({ destinations, sourceCity }) {
+export default function AllDestinationsTable({ destinations, sourceCity, sourceIata }) {
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState(null);
 
@@ -53,6 +53,7 @@ export default function AllDestinationsTable({ destinations, sourceCity }) {
       {selected && (
         <AirlinesModal
           sourceCity={sourceCity}
+          sourceIata={sourceIata}
           destCity={selected.airport_city}
           destIata={selected.iata_code}
           destAirport={selected.airport_name}

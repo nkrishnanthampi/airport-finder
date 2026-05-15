@@ -31,9 +31,10 @@ async function fetchFaresByAirline(sourceIata, destIata) {
       let link = null;
       if (entry.departure_at) {
         const d = new Date(entry.departure_at);
-        const dd = String(d.getDate()).padStart(2, "0");
+        const yy = String(d.getFullYear()).slice(2);
         const mm = String(d.getMonth() + 1).padStart(2, "0");
-        link = `https://www.aviasales.com/search/${sourceIata}${dd}${mm}${destIata}1`;
+        const dd = String(d.getDate()).padStart(2, "0");
+        link = `https://www.skyscanner.net/transport/flights/${sourceIata}/${destIata}/${yy}${mm}${dd}/`;
       }
       faresByAirline[al] = { price: entry.price, link };
     }
@@ -80,13 +81,14 @@ export default async function AirlinesPage({ searchParams }) {
 
   const fallbackDate = new Date();
   fallbackDate.setDate(fallbackDate.getDate() + 30);
-  const fbDd = String(fallbackDate.getDate()).padStart(2, "0");
+  const fbYy = String(fallbackDate.getFullYear()).slice(2);
   const fbMm = String(fallbackDate.getMonth() + 1).padStart(2, "0");
+  const fbDd = String(fallbackDate.getDate()).padStart(2, "0");
 
   return (
     <main className="min-h-screen bg-slate-50 p-6 font-sans">
       <div className="max-w-2xl mx-auto">
-        <a href="/" className="inline-block text-sky-600 hover:underline text-sm mb-4">← Airport Finder</a>
+        <a href="/" className="inline-block text-sky-600 hover:underline text-sm mb-4">← Airline Finder</a>
         <div className="mb-6">
           <p className="text-xs font-semibold text-sky-600 uppercase tracking-wider mb-1">Airlines flying to</p>
           <h1 className="text-2xl font-extrabold font-display text-slate-800 leading-tight">
@@ -108,7 +110,7 @@ export default async function AirlinesPage({ searchParams }) {
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
               {airlines.map((a, i) => {
                 const fare = fareMap[`${a.source_iata}-${a.iata_code}`];
-                const bookingLink = fare?.link ?? `https://www.aviasales.com/search/${a.source_iata}${fbDd}${fbMm}${destIata}1`;
+                const bookingLink = fare?.link ?? `https://www.skyscanner.net/transport/flights/${a.source_iata}/${destIata}/${fbYy}${fbMm}${fbDd}/`;
                 return (
                   <div
                     key={`${a.iata_code}-${a.source_iata}`}
@@ -143,7 +145,7 @@ export default async function AirlinesPage({ searchParams }) {
                         rel="noopener noreferrer"
                         className="text-sky-600 text-sm hover:underline shrink-0"
                       >
-                        Search →
+                        Search Fares →
                       </a>
                     )}
                   </div>

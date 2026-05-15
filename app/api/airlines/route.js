@@ -24,9 +24,10 @@ async function fetchFaresByAirline(sourceIata, destIata) {
             let link = null;
             if (entry.departure_at) {
               const d = new Date(entry.departure_at);
-              const dd = String(d.getDate()).padStart(2, "0");
+              const yy = String(d.getFullYear()).slice(2);
               const mm = String(d.getMonth() + 1).padStart(2, "0");
-              link = `https://www.aviasales.com/search/${sourceIata}${dd}${mm}${destIata}1`;
+              const dd = String(d.getDate()).padStart(2, "0");
+              link = `https://www.skyscanner.net/transport/flights/${sourceIata}/${destIata}/${yy}${mm}${dd}/`;
             }
             faresByAirline[al] = { price: entry.price, link };
           }
@@ -52,7 +53,14 @@ async function fetchFaresByAirline(sourceIata, destIata) {
       if (!al) return;
       const existing = faresByAirline[al];
       if (existing === undefined || entry.price < existing.price) {
-        const link = entry.link ? `https://www.aviasales.com${entry.link}` : null;
+        let link = null;
+        if (entry.departure_at) {
+          const d = new Date(entry.departure_at);
+          const yy = String(d.getFullYear()).slice(2);
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          link = `https://www.skyscanner.net/transport/flights/${sourceIata}/${destIata}/${yy}${mm}${dd}/`;
+        }
         faresByAirline[al] = { price: entry.price, link };
       }
     });
@@ -104,12 +112,13 @@ export async function GET(request) {
 
   const fallbackDate = new Date();
   fallbackDate.setDate(fallbackDate.getDate() + 30);
-  const dd = String(fallbackDate.getDate()).padStart(2, "0");
-  const mm = String(fallbackDate.getMonth() + 1).padStart(2, "0");
+  const fbYy = String(fallbackDate.getFullYear()).slice(2);
+  const fbMm = String(fallbackDate.getMonth() + 1).padStart(2, "0");
+  const fbDd = String(fallbackDate.getDate()).padStart(2, "0");
 
   const result = airlines.map((a) => {
     const fare = fareMap[`${a.source_iata}-${a.iata_code}`];
-    const fallbackLink = `https://www.aviasales.com/search/${a.source_iata}${dd}${mm}${destIata}1`;
+    const fallbackLink = `https://www.skyscanner.net/transport/flights/${a.source_iata}/${destIata}/${fbYy}${fbMm}${fbDd}/`;
     return {
       ...a,
       price: fare?.price ?? null,
