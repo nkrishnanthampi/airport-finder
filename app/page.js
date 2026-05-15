@@ -1,8 +1,6 @@
 import { sql } from "@/lib/db";
 import CitySelect from "./city-select";
-import DestinationTable from "./destination-table";
 import AllDestinationsTable from "./all-destinations-table";
-import AirlineLogo from "./airline-logo";
 
 export const dynamic = "force-dynamic";
 
@@ -10,13 +8,11 @@ export async function generateMetadata({ searchParams }) {
   const params = await searchParams;
   const city = params?.city ?? "";
   const airport = params?.airport ?? "";
-  const airline = params?.airline ?? "";
   const mode = params?.mode ?? "";
 
   if (!city) return { title: "Airport Finder" };
   if (mode === "all") return { title: `All destinations from ${city} | Airport Finder` };
-  if (airline) return { title: `${airline} routes from ${airport || city} | Airport Finder` };
-  if (airport) return { title: `Airlines from ${airport} | Airport Finder` };
+  if (airport) return { title: `Destinations from ${airport} | Airport Finder` };
   return { title: `Flying from ${city} | Airport Finder` };
 }
 
@@ -24,7 +20,6 @@ export default async function Home({ searchParams }) {
   const params = await searchParams;
   const selectedCity = params?.city ?? "";
   const selectedAirport = params?.airport ?? "";
-  const selectedAirline = params?.airline ?? "";
   const mode = params?.mode ?? "";
 
   const cities = await sql`
@@ -52,34 +47,19 @@ export default async function Home({ searchParams }) {
     activeAirport = airportsInCity[0];
   }
 
-  let airlines = [];
-  if (activeAirport) {
-    airlines = await sql`
-      SELECT DISTINCT al.iata_code, al.airline_name
+  // Destinations reachable from the selected airport
+  let airportDestinations = [];
+  if (activeAirport && mode !== "all") {
+    airportDestinations = await sql`
+      SELECT DISTINCT am.iata_code, am.airport_name, am.airport_city, am.airport_country_code
       FROM routes r
-      JOIN airline_master al ON r.airline_id = al.id
+      JOIN airport_master am ON r.destination_iata = am.iata_code
       WHERE r.source_iata = ${activeAirport.iata_code}
-      ORDER BY al.airline_name
+      ORDER BY am.airport_city, am.airport_name
     `;
   }
 
-  let activeAirline = null;
-  let destinations = [];
-  if (activeAirport && selectedAirline) {
-    activeAirline = airlines.find((a) => a.iata_code === selectedAirline) ?? null;
-    if (activeAirline) {
-      destinations = await sql`
-        SELECT am.iata_code, am.airport_name, am.airport_city, am.airport_country_code
-        FROM routes r
-        JOIN airport_master am ON r.destination_iata = am.iata_code
-        JOIN airline_master al ON r.airline_id = al.id
-        WHERE r.source_iata = ${activeAirport.iata_code}
-          AND al.iata_code = ${selectedAirline}
-        ORDER BY am.airport_city, am.airport_name
-      `;
-    }
-  }
-
+  // Destinations reachable from any airport in the selected city
   let allDestinations = [];
   if (selectedCity && mode === "all") {
     allDestinations = await sql`
@@ -139,18 +119,7 @@ export default async function Home({ searchParams }) {
           {activeAirport && mode !== "all" && (
             <>
               <span className="mx-1 text-slate-300">›</span>
-              <a
-                href={`?city=${encodeURIComponent(selectedCity)}&airport=${activeAirport.iata_code}`}
-                className="hover:text-sky-600 transition-colors whitespace-nowrap"
-              >
-                {activeAirport.airport_name}
-              </a>
-            </>
-          )}
-          {activeAirline && (
-            <>
-              <span className="mx-1 text-slate-300">›</span>
-              <span className="text-slate-700 font-medium whitespace-nowrap">{activeAirline.airline_name}</span>
+              <span className="text-slate-700 font-medium whitespace-nowrap">{activeAirport.airport_name}</span>
             </>
           )}
         </nav>
@@ -179,7 +148,7 @@ export default async function Home({ searchParams }) {
         )}
 
         {/* City landing */}
-        {selectedCity && !mode && !params?.browse && !selectedAirport && !activeAirline && (
+        {selectedCity && !mode && !params?.browse && !selectedAirport && !activeAirport && (
           <div className="max-w-xl animate-slide-up">
             <h2 className="text-xl font-bold font-display text-slate-800 mb-4">
               Flying from {selectedCity}
@@ -204,8 +173,8 @@ export default async function Home({ searchParams }) {
               >
                 <span className="text-2xl shrink-0">✈️</span>
                 <div className="flex-1">
-                  <div className="font-bold text-slate-800">Browse by airline</div>
-                  <div className="text-slate-400 text-sm">Choose an airport and airline to see their routes</div>
+                  <div className="font-bold text-slate-800">Browse by airport</div>
+                  <div className="text-slate-400 text-sm">Choose an airport to see all its destinations</div>
                 </div>
                 <span className="text-slate-300 text-xl shrink-0">›</span>
               </a>
@@ -238,6 +207,32 @@ export default async function Home({ searchParams }) {
           </div>
         )}
 
+        {/* Destinations from selected airport */}
+        {activeAirport && mode !== "all" && (
+          <div className="animate-slide-up">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1">
+              <h2 className="text-xl font-bold font-display text-slate-800">Destinations</h2>
+              <span className="text-slate-500 text-sm">
+                {airportDestinations.length} {airportDestinations.length !== 1 ? "destinations" : "destination"} from {activeAirport.airport_name}
+              </span>
+            </div>
+            <a
+              href={`?city=${encodeURIComponent(selectedCity)}&mode=all`}
+              className="inline-block text-xs text-sky-600 hover:underline mb-4"
+            >
+              See all destinations from {selectedCity} →
+            </a>
+            {airportDestinations.length === 0 ? (
+              <div className="text-center py-12 text-slate-500">
+                <span className="text-3xl">🔍</span>
+                <p className="mt-2">No destinations found for {activeAirport.airport_name}.</p>
+              </div>
+            ) : (
+              <AllDestinationsTable destinations={airportDestinations} sourceCity={selectedCity} />
+            )}
+          </div>
+        )}
+
         {/* All destinations from city */}
         {selectedCity && mode === "all" && (
           <div className="animate-slide-up">
@@ -251,7 +246,7 @@ export default async function Home({ searchParams }) {
               href={`?city=${encodeURIComponent(selectedCity)}&browse=1`}
               className="inline-block text-xs text-sky-600 hover:underline mb-4"
             >
-              Browse by airline instead →
+              Browse by airport instead →
             </a>
             {allDestinations.length === 0 ? (
               <div className="text-center py-12 text-slate-500">
@@ -260,83 +255,6 @@ export default async function Home({ searchParams }) {
               </div>
             ) : (
               <AllDestinationsTable destinations={allDestinations} sourceCity={selectedCity} />
-            )}
-          </div>
-        )}
-
-        {/* Airlines list */}
-        {activeAirport && selectedAirport && !activeAirline && mode !== "all" && (
-          <div className="max-w-xl animate-slide-up">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1">
-              <h2 className="text-xl font-bold font-display text-slate-800">Airlines</h2>
-              <span className="text-slate-500 text-sm">
-                {airlines.length} {airlines.length !== 1 ? "airlines" : "airline"} flying from {activeAirport.airport_name}
-              </span>
-            </div>
-            <a
-              href={`?city=${encodeURIComponent(selectedCity)}&mode=all`}
-              className="inline-block text-xs text-sky-600 hover:underline mb-4"
-            >
-              See all destinations from {selectedCity} instead →
-            </a>
-            {airlines.length === 0 ? (
-              <div className="text-center py-12 text-slate-500">
-                <span className="text-3xl">✈</span>
-                <p className="mt-2">No airlines found for this airport.</p>
-              </div>
-            ) : (
-              <>
-                <p className="text-slate-500 text-sm mb-3">Click an airline to see where they fly</p>
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                  {airlines.map((a, i) => (
-                    <a
-                      key={a.iata_code}
-                      href={`?city=${encodeURIComponent(selectedCity)}&airport=${activeAirport.iata_code}&airline=${a.iata_code}`}
-                      className={`flex items-center gap-3 px-4 py-3.5 hover:bg-sky-50 transition-colors group${i > 0 ? " border-t border-slate-100" : ""}`}
-                    >
-                      <AirlineLogo iata={a.iata_code} name={a.airline_name} className="w-8 h-8" />
-                      <span className="bg-slate-100 text-slate-500 font-mono text-xs px-2 py-0.5 rounded-md shrink-0">
-                        {a.iata_code}
-                      </span>
-                      <span className="text-slate-700 font-medium flex-1">{a.airline_name}</span>
-                      <span className="text-slate-300 group-hover:text-sky-500 transition-colors text-xl">›</span>
-                    </a>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Destinations */}
-        {activeAirport && activeAirline && (
-          <div className="animate-slide-up">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1">
-              <h2 className="text-xl font-bold font-display text-slate-800">Destinations</h2>
-              <span className="text-slate-500 text-sm">
-                {destinations.length} {destinations.length !== 1 ? "routes" : "route"} · {activeAirline.airline_name} from {activeAirport.iata_code}
-              </span>
-            </div>
-            <a
-              href={`?city=${encodeURIComponent(selectedCity)}&mode=all`}
-              className="inline-block text-xs text-sky-600 hover:underline mb-4"
-            >
-              See all destinations from {selectedCity} →
-            </a>
-            {destinations.length === 0 ? (
-              <div className="text-center py-12 text-slate-500">
-                <span className="text-3xl">🔍</span>
-                <p className="mt-2">No destinations found.</p>
-              </div>
-            ) : (
-              <DestinationTable
-                destinations={destinations}
-                city={selectedCity}
-                iata={activeAirport.iata_code}
-                airportName={activeAirport.airport_name}
-                airlineIata={activeAirline.iata_code}
-                airline={activeAirline.airline_name}
-              />
             )}
           </div>
         )}
