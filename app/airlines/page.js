@@ -73,6 +73,7 @@ export default async function AirlinesPage({ searchParams }) {
   return (
     <main className="min-h-screen bg-slate-50 p-6 font-sans">
       <div className="max-w-2xl mx-auto">
+        <a href="/" className="inline-block text-sky-600 hover:underline text-sm mb-4">← Airport Finder</a>
         <div className="mb-6">
           <p className="text-xs font-semibold text-sky-600 uppercase tracking-wider mb-1">Airlines flying to</p>
           <h1 className="text-2xl font-extrabold font-display text-slate-800 leading-tight">

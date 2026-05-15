@@ -1,11 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DeparturesModal from "./departures-modal";
 
 export default function DestinationTable({ destinations, city, iata, airportName, airlineIata, airline }) {
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState(null);
+
+  // Auto-open modal on page load if ?dest= is in the URL (deep link support)
+  useEffect(() => {
+    const destIata = new URLSearchParams(window.location.search).get("dest");
+    if (destIata) {
+      const dest = destinations.find((d) => d.iata_code === destIata);
+      if (dest) setSelected(dest);
+    }
+  }, [destinations]);
+
+  // Close modal when browser back button removes the ?dest= param
+  useEffect(() => {
+    const handlePop = () => {
+      const destIata = new URLSearchParams(window.location.search).get("dest");
+      if (!destIata) setSelected(null);
+    };
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, []);
+
+  function openModal(dest) {
+    setSelected(dest);
+    const url = new URL(window.location.href);
+    url.searchParams.set("dest", dest.iata_code);
+    window.history.pushState({}, "", url.toString());
+  }
+
+  function closeModal() {
+    setSelected(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("dest");
+    window.history.replaceState({}, "", url.toString());
+  }
 
   const filtered = destinations.filter(
     (d) =>
@@ -26,7 +59,7 @@ export default function DestinationTable({ destinations, city, iata, airportName
           airlineIata={airlineIata}
           destination={selected.airport_city}
           destIata={selected.iata_code}
-          onClose={() => setSelected(null)}
+          onClose={closeModal}
         />
       )}
 
@@ -73,9 +106,13 @@ export default function DestinationTable({ destinations, city, iata, airportName
                 {filtered.map((d, i) => (
                   <tr
                     key={d.iata_code}
-                    onClick={() => setSelected(d)}
+                    onClick={() => openModal(d)}
+                    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openModal(d)}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`View departures to ${d.airport_city}`}
                     title={`Click for live departure times to ${d.airport_name} in the next 12 hours`}
-                    className={`cursor-pointer hover:bg-sky-50 transition-colors group${i > 0 ? " border-t border-slate-100" : ""}${i % 2 === 1 ? " bg-slate-50/40" : ""}`}
+                    className={`cursor-pointer hover:bg-sky-50 transition-colors group focus:outline-none focus:bg-sky-50${i > 0 ? " border-t border-slate-100" : ""}${i % 2 === 1 ? " bg-slate-50/40" : ""}`}
                   >
                     <td className="px-4 py-3 font-semibold text-slate-800">{d.airport_city}</td>
                     <td className="px-4 py-3 text-slate-600">{d.airport_name}</td>
@@ -103,7 +140,7 @@ export default function DestinationTable({ destinations, city, iata, airportName
             {filtered.map((d) => (
               <button
                 key={d.iata_code}
-                onClick={() => setSelected(d)}
+                onClick={() => openModal(d)}
                 className="w-full text-left bg-white rounded-xl border border-slate-200 px-4 py-3 hover:border-sky-300 hover:shadow-sm transition-all flex items-center gap-3"
               >
                 <span className="bg-sky-100 text-sky-700 font-mono font-bold text-xs px-2 py-1 rounded-md shrink-0">

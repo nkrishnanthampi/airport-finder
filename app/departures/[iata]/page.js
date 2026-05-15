@@ -41,6 +41,7 @@ export default async function DeparturesPage({ params, searchParams }) {
   return (
     <main className="min-h-screen bg-slate-100">
       <header className="bg-blue-900 text-white px-6 py-4 shadow-lg">
+        <a href="/" className="text-sky-300 hover:text-white text-sm transition-colors block mb-2">← Airport Finder</a>
         <div className="flex items-center gap-2">
           <span className="text-xl">✈</span>
           <h1 className="font-semibold text-lg">{heading}</h1>

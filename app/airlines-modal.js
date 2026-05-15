@@ -50,6 +50,14 @@ export default function AirlinesModal({ sourceCity, destCity, destIata, destAirp
             )}
           </h2>
           <p className="text-sm text-slate-500 mt-0.5">from {sourceCity}</p>
+          <a
+            href={`/airlines?${new URLSearchParams({ city: sourceCity, destIata, destCity, destAirport })}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-1.5 text-xs text-sky-600 hover:underline"
+          >
+            Open full page ↗
+          </a>
         </div>
       }
     >

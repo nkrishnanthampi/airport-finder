@@ -6,6 +6,20 @@ import AirlineLogo from "./airline-logo";
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({ searchParams }) {
+  const params = await searchParams;
+  const city = params?.city ?? "";
+  const airport = params?.airport ?? "";
+  const airline = params?.airline ?? "";
+  const mode = params?.mode ?? "";
+
+  if (!city) return { title: "Airport Finder" };
+  if (mode === "all") return { title: `All destinations from ${city} | Airport Finder` };
+  if (airline) return { title: `${airline} routes from ${airport || city} | Airport Finder` };
+  if (airport) return { title: `Airlines from ${airport} | Airport Finder` };
+  return { title: `Flying from ${city} | Airport Finder` };
+}
+
 export default async function Home({ searchParams }) {
   const params = await searchParams;
   const selectedCity = params?.city ?? "";
@@ -97,7 +111,7 @@ export default async function Home({ searchParams }) {
         <div className="flex-1" />
 
         <div className="flex items-center gap-2">
-          <span className="text-sky-300 text-xs hidden sm:block">Flying from</span>
+          <span className="text-sky-300 text-xs">Flying from</span>
           <CitySelect cities={cities} selectedCity={selectedCity} />
         </div>
       </header>
@@ -105,6 +119,8 @@ export default async function Home({ searchParams }) {
       {/* Breadcrumb */}
       {selectedCity && (
         <nav className="shrink-0 bg-white border-b border-slate-200 px-4 sm:px-6 py-2 text-sm text-slate-500 flex items-center gap-1 overflow-x-auto">
+          <a href="/" className="hover:text-sky-600 transition-colors whitespace-nowrap">Home</a>
+          <span className="mx-1 text-slate-300">›</span>
           <a href={`?city=${encodeURIComponent(selectedCity)}`} className="hover:text-sky-600 transition-colors whitespace-nowrap">
             {selectedCity}
           </a>
@@ -112,6 +128,12 @@ export default async function Home({ searchParams }) {
             <>
               <span className="mx-1 text-slate-300">›</span>
               <span className="text-slate-700 font-medium whitespace-nowrap">All destinations</span>
+            </>
+          )}
+          {params?.browse === "1" && !activeAirport && mode !== "all" && (
+            <>
+              <span className="mx-1 text-slate-300">›</span>
+              <span className="text-slate-700 font-medium whitespace-nowrap">Select airport</span>
             </>
           )}
           {activeAirport && mode !== "all" && (
@@ -157,7 +179,7 @@ export default async function Home({ searchParams }) {
         )}
 
         {/* City landing */}
-        {selectedCity && !mode && !selectedAirport && !activeAirline && (
+        {selectedCity && !mode && !params?.browse && !selectedAirport && !activeAirline && (
           <div className="max-w-xl animate-slide-up">
             <h2 className="text-xl font-bold font-display text-slate-800 mb-4">
               Flying from {selectedCity}
@@ -219,12 +241,18 @@ export default async function Home({ searchParams }) {
         {/* All destinations from city */}
         {selectedCity && mode === "all" && (
           <div className="animate-slide-up">
-            <div className="flex items-baseline gap-2 mb-4">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1">
               <h2 className="text-xl font-bold font-display text-slate-800">All destinations</h2>
               <span className="text-slate-500 text-sm">
                 {allDestinations.length} {allDestinations.length !== 1 ? "cities" : "city"} from {selectedCity}
               </span>
             </div>
+            <a
+              href={`?city=${encodeURIComponent(selectedCity)}&browse=1`}
+              className="inline-block text-xs text-sky-600 hover:underline mb-4"
+            >
+              Browse by airline instead →
+            </a>
             {allDestinations.length === 0 ? (
               <div className="text-center py-12 text-slate-500">
                 <span className="text-3xl">🔍</span>
@@ -239,10 +267,18 @@ export default async function Home({ searchParams }) {
         {/* Airlines list */}
         {activeAirport && selectedAirport && !activeAirline && mode !== "all" && (
           <div className="max-w-xl animate-slide-up">
-            <div className="flex items-baseline gap-2 mb-4">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1">
               <h2 className="text-xl font-bold font-display text-slate-800">Airlines</h2>
-              <span className="text-slate-500 text-sm">flying from {activeAirport.airport_name}</span>
+              <span className="text-slate-500 text-sm">
+                {airlines.length} {airlines.length !== 1 ? "airlines" : "airline"} flying from {activeAirport.airport_name}
+              </span>
             </div>
+            <a
+              href={`?city=${encodeURIComponent(selectedCity)}&mode=all`}
+              className="inline-block text-xs text-sky-600 hover:underline mb-4"
+            >
+              See all destinations from {selectedCity} instead →
+            </a>
             {airlines.length === 0 ? (
               <div className="text-center py-12 text-slate-500">
                 <span className="text-3xl">✈</span>
@@ -275,12 +311,18 @@ export default async function Home({ searchParams }) {
         {/* Destinations */}
         {activeAirport && activeAirline && (
           <div className="animate-slide-up">
-            <div className="flex items-baseline gap-2 mb-4">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1">
               <h2 className="text-xl font-bold font-display text-slate-800">Destinations</h2>
               <span className="text-slate-500 text-sm">
                 {destinations.length} {destinations.length !== 1 ? "routes" : "route"} · {activeAirline.airline_name} from {activeAirport.iata_code}
               </span>
             </div>
+            <a
+              href={`?city=${encodeURIComponent(selectedCity)}&mode=all`}
+              className="inline-block text-xs text-sky-600 hover:underline mb-4"
+            >
+              See all destinations from {selectedCity} →
+            </a>
             {destinations.length === 0 ? (
               <div className="text-center py-12 text-slate-500">
                 <span className="text-3xl">🔍</span>

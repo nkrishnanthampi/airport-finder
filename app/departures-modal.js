@@ -38,7 +38,7 @@ function Skeleton() {
 }
 
 export default function DeparturesModal({
-  city, airport, iata, airline, airlineIata, destination, destIata, onClose,
+  airport, iata, airline, airlineIata, destination, destIata, onClose,
 }) {
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +73,14 @@ export default function DeparturesModal({
             departing {airport}
             <span className="ml-1.5 font-mono text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{iata}</span>
           </p>
+          <a
+            href={`/popup?${new URLSearchParams({ airline, airlineIata, destination, destIata, airport, iata })}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-1.5 text-xs text-sky-600 hover:underline"
+          >
+            Open full page ↗
+          </a>
         </div>
       }
     >

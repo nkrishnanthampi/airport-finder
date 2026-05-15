@@ -37,7 +37,7 @@ export default function CitySelect({ cities, selectedCity, size = "sm" }) {
       onChange={handleChange}
       className="bg-white/10 text-white border border-white/20 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-white/40 cursor-pointer hover:bg-white/20 transition-colors backdrop-blur-sm"
     >
-      <option value="" className="text-slate-800 bg-white">All cities</option>
+      <option value="" className="text-slate-800 bg-white">Choose a city…</option>
       {cities.map((c) => (
         <option key={c.airport_city} value={c.airport_city} className="text-slate-800 bg-white">
           {c.airport_city}
