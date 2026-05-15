@@ -8,7 +8,7 @@ async function fetchFaresByAirline(sourceIata, destIata) {
 
   const headers = { "x-access-token": token };
 
-  // Primary: calendar endpoint
+  // Primary: calendar endpoint (no link field — construct one from departure date)
   try {
     const url = `https://api.travelpayouts.com/v1/prices/calendar?origin=${sourceIata}&destination=${destIata}&currency=gbp&calendar_type=departure_date`;
     const res = await fetch(url, { headers, next: { revalidate: 3600 } });
@@ -19,8 +19,16 @@ async function fetchFaresByAirline(sourceIata, destIata) {
         Object.values(data.data).forEach((entry) => {
           const al = entry.airline;
           if (!al) return;
-          if (faresByAirline[al] === undefined || entry.price < faresByAirline[al]) {
-            faresByAirline[al] = entry.price;
+          const existing = faresByAirline[al];
+          if (existing === undefined || entry.price < existing.price) {
+            let link = null;
+            if (entry.departure_at) {
+              const d = new Date(entry.departure_at);
+              const dd = String(d.getDate()).padStart(2, "0");
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              link = `https://www.aviasales.com/search/${sourceIata}${dd}${mm}${destIata}1`;
+            }
+            faresByAirline[al] = { price: entry.price, link };
           }
         });
         return faresByAirline;
@@ -30,7 +38,7 @@ async function fetchFaresByAirline(sourceIata, destIata) {
     // fall through to fallback
   }
 
-  // Fallback: latest prices endpoint (broader route coverage)
+  // Fallback: latest prices endpoint — includes a link field
   try {
     const url = `https://api.travelpayouts.com/v2/prices/latest?origin=${sourceIata}&destination=${destIata}&currency=gbp&limit=30&sorting=price`;
     const res = await fetch(url, { headers, next: { revalidate: 3600 } });
@@ -42,8 +50,10 @@ async function fetchFaresByAirline(sourceIata, destIata) {
     data.data.forEach((entry) => {
       const al = entry.airline;
       if (!al) return;
-      if (faresByAirline[al] === undefined || entry.price < faresByAirline[al]) {
-        faresByAirline[al] = entry.price;
+      const existing = faresByAirline[al];
+      if (existing === undefined || entry.price < existing.price) {
+        const link = entry.link ? `https://www.aviasales.com${entry.link}` : null;
+        faresByAirline[al] = { price: entry.price, link };
       }
     });
     return faresByAirline;
@@ -87,15 +97,25 @@ export async function GET(request) {
 
   const fareMap = {};
   fareResults.forEach(({ sourceIata, fares }) => {
-    Object.entries(fares).forEach(([airlineIata, price]) => {
-      fareMap[`${sourceIata}-${airlineIata}`] = price;
+    Object.entries(fares).forEach(([airlineIata, fare]) => {
+      fareMap[`${sourceIata}-${airlineIata}`] = fare;
     });
   });
 
-  const result = airlines.map((a) => ({
-    ...a,
-    price: fareMap[`${a.source_iata}-${a.iata_code}`] ?? null,
-  }));
+  const fallbackDate = new Date();
+  fallbackDate.setDate(fallbackDate.getDate() + 30);
+  const dd = String(fallbackDate.getDate()).padStart(2, "0");
+  const mm = String(fallbackDate.getMonth() + 1).padStart(2, "0");
+
+  const result = airlines.map((a) => {
+    const fare = fareMap[`${a.source_iata}-${a.iata_code}`];
+    const fallbackLink = `https://www.aviasales.com/search/${a.source_iata}${dd}${mm}${destIata}1`;
+    return {
+      ...a,
+      price: fare?.price ?? null,
+      booking_link: fare?.link ?? fallbackLink,
+    };
+  });
 
   return Response.json({ airlines: result });
 }

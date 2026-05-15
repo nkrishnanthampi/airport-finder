@@ -26,8 +26,16 @@ async function fetchFaresByAirline(sourceIata, destIata) {
   Object.values(data.data).forEach((entry) => {
     const al = entry.airline;
     if (!al) return;
-    if (faresByAirline[al] === undefined || entry.price < faresByAirline[al]) {
-      faresByAirline[al] = entry.price;
+    const existing = faresByAirline[al];
+    if (existing === undefined || entry.price < existing.price) {
+      let link = null;
+      if (entry.departure_at) {
+        const d = new Date(entry.departure_at);
+        const dd = String(d.getDate()).padStart(2, "0");
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        link = `https://www.aviasales.com/search/${sourceIata}${dd}${mm}${destIata}1`;
+      }
+      faresByAirline[al] = { price: entry.price, link };
     }
   });
 
@@ -65,10 +73,15 @@ export default async function AirlinesPage({ searchParams }) {
 
   const fareMap = {};
   fareResults.forEach(({ sourceIata, fares }) => {
-    Object.entries(fares).forEach(([airlineIata, price]) => {
-      fareMap[`${sourceIata}-${airlineIata}`] = price;
+    Object.entries(fares).forEach(([airlineIata, fare]) => {
+      fareMap[`${sourceIata}-${airlineIata}`] = fare;
     });
   });
+
+  const fallbackDate = new Date();
+  fallbackDate.setDate(fallbackDate.getDate() + 30);
+  const fbDd = String(fallbackDate.getDate()).padStart(2, "0");
+  const fbMm = String(fallbackDate.getMonth() + 1).padStart(2, "0");
 
   return (
     <main className="min-h-screen bg-slate-50 p-6 font-sans">
@@ -94,7 +107,8 @@ export default async function AirlinesPage({ searchParams }) {
           <>
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
               {airlines.map((a, i) => {
-                const price = fareMap[`${a.source_iata}-${a.iata_code}`];
+                const fare = fareMap[`${a.source_iata}-${a.iata_code}`];
+                const bookingLink = fare?.link ?? `https://www.aviasales.com/search/${a.source_iata}${fbDd}${fbMm}${destIata}1`;
                 return (
                   <div
                     key={`${a.iata_code}-${a.source_iata}`}
@@ -110,13 +124,27 @@ export default async function AirlinesPage({ searchParams }) {
                       <p className="font-semibold text-slate-800">{a.airline_name}</p>
                       <p className="text-sm text-slate-500 truncate">{a.source_airport}</p>
                     </div>
-                    {price !== undefined ? (
+                    {fare !== undefined ? (
                       <div className="text-right shrink-0">
-                        <p className="text-green-700 font-bold text-lg">£{price}</p>
+                        <a
+                          href={bookingLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-green-700 font-bold text-lg hover:underline"
+                        >
+                          £{fare.price}
+                        </a>
                         <p className="text-xs text-slate-400">one-way</p>
                       </div>
                     ) : (
-                      <span className="text-slate-300 text-sm shrink-0">No price data</span>
+                      <a
+                        href={bookingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sky-600 text-sm hover:underline shrink-0"
+                      >
+                        Search →
+                      </a>
                     )}
                   </div>
                 );

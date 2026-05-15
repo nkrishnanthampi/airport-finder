@@ -106,11 +106,25 @@ export default function AirlinesModal({ sourceCity, destCity, destIata, destAirp
               </div>
               {a.price !== null ? (
                 <div className="text-right shrink-0">
-                  <p className="text-green-700 font-bold text-base">£{a.price}</p>
+                  <a
+                    href={a.booking_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-700 font-bold text-base hover:underline"
+                  >
+                    £{a.price}
+                  </a>
                   <p className="text-xs text-slate-400">one-way</p>
                 </div>
               ) : (
-                <span className="text-slate-300 text-sm shrink-0">—</span>
+                <a
+                  href={a.booking_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sky-600 text-sm hover:underline shrink-0"
+                >
+                  Search →
+                </a>
               )}
             </div>
           ))}
