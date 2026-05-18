@@ -46,6 +46,7 @@ async function fetchFaresByAirline(sourceIata, destIata) {
 export default async function AirlinesPage({ searchParams }) {
   const params = await searchParams;
   const city = params?.city ?? "";
+  const country = params?.country ?? "";
   const destIata = params?.destIata ?? "";
   const destCity = params?.destCity ?? "";
   const destAirport = params?.destAirport ?? "";
@@ -58,7 +59,7 @@ export default async function AirlinesPage({ searchParams }) {
       JOIN airport_master src ON r.source_iata = src.iata_code
       JOIN airline_master al ON r.airline_id = al.id
       WHERE src.airport_city = ${city}
-        AND src.airport_country_code = 'GBR'
+        AND (${country} = '' OR src.airport_country_code = ${country})
         AND r.destination_iata = ${destIata}
       ORDER BY al.airline_name, src.airport_name
     `;

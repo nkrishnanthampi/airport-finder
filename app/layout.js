@@ -19,7 +19,7 @@ const dmSans = DM_Sans({
 
 export const metadata = {
   title: "Airline Finder",
-  description: "Find airlines and destinations from UK airports",
+  description: "Find airlines and destinations from any airport worldwide",
 };
 
 export default function RootLayout({ children }) {

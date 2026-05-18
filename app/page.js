@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db";
-import CitySelect from "./city-select";
+import AirportSearch from "./airport-search";
 import AllDestinationsTable from "./all-destinations-table";
 
 export const dynamic = "force-dynamic";
@@ -19,23 +19,18 @@ export async function generateMetadata({ searchParams }) {
 export default async function Home({ searchParams }) {
   const params = await searchParams;
   const selectedCity = params?.city ?? "";
+  const selectedCountry = params?.country ?? "";
   const selectedAirport = params?.airport ?? "";
   const mode = params?.mode ?? "";
 
-  const cities = await sql`
-    SELECT DISTINCT airport_city
-    FROM airport_master
-    WHERE airport_country_code = 'GBR'
-    ORDER BY airport_city
-  `;
-
+  // Only query city airports when both city and country are known
   let airportsInCity = [];
-  if (selectedCity) {
+  if (selectedCity && selectedCountry) {
     airportsInCity = await sql`
       SELECT iata_code, airport_name
       FROM airport_master
       WHERE airport_city = ${selectedCity}
-        AND airport_country_code = 'GBR'
+        AND airport_country_code = ${selectedCountry}
       ORDER BY airport_name
     `;
   }
@@ -59,19 +54,23 @@ export default async function Home({ searchParams }) {
     `;
   }
 
-  // Destinations reachable from any airport in the selected city
+  // All destinations reachable from any airport in the selected city
   let allDestinations = [];
-  if (selectedCity && mode === "all") {
+  if (selectedCity && selectedCountry && mode === "all") {
     allDestinations = await sql`
       SELECT DISTINCT am.iata_code, am.airport_name, am.airport_city, am.airport_country_code
       FROM routes r
       JOIN airport_master src ON r.source_iata = src.iata_code
       JOIN airport_master am ON r.destination_iata = am.iata_code
       WHERE src.airport_city = ${selectedCity}
-        AND src.airport_country_code = 'GBR'
+        AND src.airport_country_code = ${selectedCountry}
       ORDER BY am.airport_city, am.airport_name
     `;
   }
+
+  const cityParams = selectedCity
+    ? `city=${encodeURIComponent(selectedCity)}&country=${selectedCountry}`
+    : "";
 
   return (
     <main className="flex-1 flex flex-col overflow-hidden">
@@ -84,25 +83,26 @@ export default async function Home({ searchParams }) {
           </div>
           <div className="leading-tight hidden sm:block">
             <span className="font-bold tracking-tight text-sm block font-display">Airline Finder</span>
-            <span className="text-sky-300 text-xs">UK departures</span>
+            <span className="text-sky-300 text-xs">Global departures</span>
           </div>
         </a>
 
         <div className="flex-1" />
 
         <div className="flex items-center gap-2">
-          <span className="text-sky-300 text-xs">Flying from</span>
-          <CitySelect cities={cities} selectedCity={selectedCity} />
+          <span className="text-sky-300 text-xs hidden sm:inline">Flying from</span>
+          <AirportSearch selectedCity={selectedCity} />
         </div>
       </header>
 
       {/* Breadcrumb */}
-      {selectedCity && (
+      {selectedCity && selectedCountry && (
         <nav className="shrink-0 bg-white border-b border-slate-200 px-4 sm:px-6 py-2 text-sm text-slate-500 flex items-center gap-1 overflow-x-auto">
           <a href="/" className="hover:text-sky-600 transition-colors whitespace-nowrap">Home</a>
           <span className="mx-1 text-slate-300">›</span>
-          <a href={`?city=${encodeURIComponent(selectedCity)}`} className="hover:text-sky-600 transition-colors whitespace-nowrap">
+          <a href={`?${cityParams}`} className="hover:text-sky-600 transition-colors whitespace-nowrap">
             {selectedCity}
+            <span className="ml-1 text-slate-400 text-xs">{selectedCountry}</span>
           </a>
           {mode === "all" && (
             <>
@@ -129,7 +129,7 @@ export default async function Home({ searchParams }) {
       <div className="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6">
 
         {/* Empty state hero */}
-        {!selectedCity && (
+        {(!selectedCity || !selectedCountry) && (
           <div className="flex flex-col items-center justify-center h-full text-center gap-6 px-4 animate-fade-in">
             <div className="text-6xl animate-bounce">✈️</div>
             <div>
@@ -137,25 +137,25 @@ export default async function Home({ searchParams }) {
                 Where are you flying from?
               </h1>
               <p className="text-slate-500 text-base max-w-sm mx-auto">
-                Explore every airline, route, and live departure time from any UK airport.
+                Explore every airline and route from any airport worldwide.
               </p>
             </div>
             <div className="w-full max-w-xs">
-              <CitySelect cities={cities} selectedCity={selectedCity} size="lg" />
+              <AirportSearch selectedCity={selectedCity} size="lg" />
             </div>
-            <p className="text-xs text-slate-400">Covering all major UK departure airports</p>
+            <p className="text-xs text-slate-400">Covering airports worldwide</p>
           </div>
         )}
 
         {/* City landing */}
-        {selectedCity && !mode && !params?.browse && !selectedAirport && !activeAirport && (
+        {selectedCity && selectedCountry && !mode && !params?.browse && !selectedAirport && !activeAirport && (
           <div className="max-w-xl animate-slide-up">
             <h2 className="text-xl font-bold font-display text-slate-800 mb-4">
               Flying from {selectedCity}
             </h2>
             <div className="flex flex-col gap-3">
               <a
-                href={`?city=${encodeURIComponent(selectedCity)}&mode=all`}
+                href={`?${cityParams}&mode=all`}
                 className="bg-gradient-to-r from-sky-600 to-indigo-600 text-white rounded-xl px-5 py-4 hover:from-sky-700 hover:to-indigo-700 transition-all flex items-center gap-3 shadow-md hover:shadow-lg"
               >
                 <span className="text-2xl shrink-0">🌍</span>
@@ -167,8 +167,8 @@ export default async function Home({ searchParams }) {
               </a>
               <a
                 href={airportsInCity.length === 1
-                  ? `?city=${encodeURIComponent(selectedCity)}&airport=${airportsInCity[0]?.iata_code}`
-                  : `?city=${encodeURIComponent(selectedCity)}&browse=1`}
+                  ? `?${cityParams}&airport=${airportsInCity[0]?.iata_code}`
+                  : `?${cityParams}&browse=1`}
                 className="bg-white rounded-xl border-2 border-slate-200 px-5 py-4 hover:border-sky-400 hover:shadow-md transition-all flex items-center gap-3"
               >
                 <span className="text-2xl shrink-0">✈️</span>
@@ -183,7 +183,7 @@ export default async function Home({ searchParams }) {
         )}
 
         {/* Multiple airports — pick one */}
-        {selectedCity && params?.browse === "1" && airportsInCity.length > 1 && !activeAirport && (
+        {selectedCity && selectedCountry && params?.browse === "1" && airportsInCity.length > 1 && !activeAirport && (
           <div className="max-w-xl animate-slide-up">
             <h2 className="text-xl font-bold font-display text-slate-800 mb-1">
               Choose an airport
@@ -193,7 +193,7 @@ export default async function Home({ searchParams }) {
               {airportsInCity.map((a) => (
                 <a
                   key={a.iata_code}
-                  href={`?city=${encodeURIComponent(selectedCity)}&airport=${a.iata_code}`}
+                  href={`?${cityParams}&airport=${a.iata_code}`}
                   className="bg-white rounded-xl border-2 border-slate-200 px-4 py-3.5 hover:border-sky-400 hover:shadow-sm transition-all flex items-center gap-3 group"
                 >
                   <span className="bg-sky-100 text-sky-700 font-mono font-bold text-sm px-2.5 py-1 rounded-lg shrink-0">
@@ -217,7 +217,7 @@ export default async function Home({ searchParams }) {
               </span>
             </div>
             <a
-              href={`?city=${encodeURIComponent(selectedCity)}&mode=all`}
+              href={`?${cityParams}&mode=all`}
               className="inline-block text-xs text-sky-600 hover:underline mb-4"
             >
               See all destinations from {selectedCity} →
@@ -228,13 +228,18 @@ export default async function Home({ searchParams }) {
                 <p className="mt-2">No destinations found for {activeAirport.airport_name}.</p>
               </div>
             ) : (
-              <AllDestinationsTable destinations={airportDestinations} sourceCity={selectedCity} sourceIata={activeAirport.iata_code} />
+              <AllDestinationsTable
+                destinations={airportDestinations}
+                sourceCity={selectedCity}
+                sourceCountry={selectedCountry}
+                sourceIata={activeAirport.iata_code}
+              />
             )}
           </div>
         )}
 
         {/* All destinations from city */}
-        {selectedCity && mode === "all" && (
+        {selectedCity && selectedCountry && mode === "all" && (
           <div className="animate-slide-up">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mb-1">
               <h2 className="text-xl font-bold font-display text-slate-800">All destinations</h2>
@@ -243,7 +248,7 @@ export default async function Home({ searchParams }) {
               </span>
             </div>
             <a
-              href={`?city=${encodeURIComponent(selectedCity)}&browse=1`}
+              href={`?${cityParams}&browse=1`}
               className="inline-block text-xs text-sky-600 hover:underline mb-4"
             >
               Browse by airport instead →
@@ -254,7 +259,11 @@ export default async function Home({ searchParams }) {
                 <p className="mt-2">No destinations found for {selectedCity}.</p>
               </div>
             ) : (
-              <AllDestinationsTable destinations={allDestinations} sourceCity={selectedCity} />
+              <AllDestinationsTable
+                destinations={allDestinations}
+                sourceCity={selectedCity}
+                sourceCountry={selectedCountry}
+              />
             )}
           </div>
         )}

@@ -20,13 +20,13 @@ function Skeleton() {
   );
 }
 
-export default function AirlinesModal({ sourceCity, sourceIata, destCity, destIata, destAirport, onClose }) {
+export default function AirlinesModal({ sourceCity, sourceCountry, sourceIata, destCity, destIata, destAirport, onClose }) {
   const [airlines, setAirlines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const params = new URLSearchParams({ city: sourceCity, destIata });
+    const params = new URLSearchParams({ city: sourceCity, country: sourceCountry ?? "", destIata });
     fetch(`/api/airlines?${params}`)
       .then((r) => r.json())
       .then((data) => {
@@ -51,7 +51,7 @@ export default function AirlinesModal({ sourceCity, sourceIata, destCity, destIa
           </h2>
           <p className="text-sm text-slate-500 mt-0.5">from {sourceCity}</p>
           <a
-            href={`/airlines?${new URLSearchParams({ city: sourceCity, destIata, destCity, destAirport })}`}
+            href={`/airlines?${new URLSearchParams({ city: sourceCity, country: sourceCountry ?? "", destIata, destCity, destAirport })}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block mt-1.5 text-xs text-sky-600 hover:underline"
