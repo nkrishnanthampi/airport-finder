@@ -77,13 +77,13 @@ export default async function Home({ searchParams }) {
 
       {/* Header */}
       <header className="shrink-0 bg-gradient-to-r from-sky-800 to-indigo-900 text-white px-4 sm:px-6 py-3 flex items-center gap-4 shadow-lg">
-        <a href="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="w-8 h-8 bg-amber-400 rounded-lg flex items-center justify-center shadow-sm shrink-0">
-            <span className="text-sm">✈</span>
+        <a href="/" className="flex items-center gap-3 shrink-0">
+          <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-md shrink-0">
+            <span className="text-lg">✈</span>
           </div>
           <div className="leading-tight hidden sm:block">
-            <span className="font-bold tracking-tight text-sm block font-display">Airline Finder</span>
-            <span className="text-sky-300 text-xs">Global departures</span>
+            <span className="font-black tracking-tight text-lg block font-display bg-gradient-to-r from-white to-sky-200 bg-clip-text text-transparent">Airline Finder</span>
+            <span className="text-sky-400 text-xs font-medium tracking-wide uppercase">Global departures</span>
           </div>
         </a>
 
