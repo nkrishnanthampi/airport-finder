@@ -97,12 +97,18 @@ export async function GET(request) {
   }
 
   const uniqueSourceIatas = [...new Set(airlines.map((a) => a.source_iata))];
-  const fareResults = await Promise.all(
-    uniqueSourceIatas.map(async (iata) => ({
-      sourceIata: iata,
-      fares: await fetchFaresByAirline(iata, destIata),
-    }))
-  );
+  const [fareResults, coordRows] = await Promise.all([
+    Promise.all(
+      uniqueSourceIatas.map(async (iata) => ({
+        sourceIata: iata,
+        fares: await fetchFaresByAirline(iata, destIata),
+      }))
+    ),
+    sql`
+      SELECT iata_code, latitude, longitude FROM airport_master
+      WHERE iata_code = ANY(${[destIata, ...uniqueSourceIatas]})
+    `,
+  ]);
 
   const fareMap = {};
   fareResults.forEach(({ sourceIata, fares }) => {
@@ -110,6 +116,27 @@ export async function GET(request) {
       fareMap[`${sourceIata}-${airlineIata}`] = fare;
     });
   });
+
+  const coordMap = new Map(coordRows.map((r) => [r.iata_code, r]));
+
+  function haversineKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function estimateDuration(srcIata) {
+    const src = coordMap.get(srcIata);
+    const dst = coordMap.get(destIata);
+    if (!src?.latitude || !dst?.latitude) return null;
+    const km = haversineKm(+src.latitude, +src.longitude, +dst.latitude, +dst.longitude);
+    // ~800 km/h cruise + ~30 min for taxi/climb/descent
+    return Math.round((km / 800) * 60 + 30);
+  }
 
   const fallbackDate = new Date();
   fallbackDate.setDate(fallbackDate.getDate() + 30);
@@ -120,11 +147,13 @@ export async function GET(request) {
   const result = airlines.map((a) => {
     const fare = fareMap[`${a.source_iata}-${a.iata_code}`];
     const fallbackLink = `https://www.skyscanner.net/transport/flights/${a.source_iata}/${destIata}/${fbYy}${fbMm}${fbDd}/`;
+    const apiDuration = fare?.duration ?? null;
     return {
       ...a,
       price: fare?.price ?? null,
       booking_link: fare?.link ?? fallbackLink,
-      duration: fare?.duration ?? null,
+      duration: apiDuration ?? estimateDuration(a.source_iata),
+      durationEstimated: apiDuration === null,
     };
   });
 

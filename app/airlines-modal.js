@@ -128,7 +128,9 @@ export default function AirlinesModal({ sourceCity, sourceCountry, sourceIata, d
               )}
               {fmtDuration(a.duration) && (
                 <p className="text-xs text-slate-500 flex items-center gap-0.5">
-                  <span className="text-slate-400">⏱</span>{fmtDuration(a.duration)}
+                  <span>⏱</span>
+                  {fmtDuration(a.duration)}
+                  {a.durationEstimated && <span className="text-slate-400 ml-0.5">est.</span>}
                 </p>
               )}
             </div>
