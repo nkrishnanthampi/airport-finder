@@ -29,7 +29,7 @@ async function fetchFaresByAirline(sourceIata, destIata) {
               const dd = String(d.getDate()).padStart(2, "0");
               link = `https://www.skyscanner.net/transport/flights/${sourceIata}/${destIata}/${yy}${mm}${dd}/`;
             }
-            faresByAirline[al] = { price: entry.price, link };
+            faresByAirline[al] = { price: entry.price, link, duration: entry.duration ?? null };
           }
         });
         return faresByAirline;
@@ -61,7 +61,7 @@ async function fetchFaresByAirline(sourceIata, destIata) {
           const dd = String(d.getDate()).padStart(2, "0");
           link = `https://www.skyscanner.net/transport/flights/${sourceIata}/${destIata}/${yy}${mm}${dd}/`;
         }
-        faresByAirline[al] = { price: entry.price, link };
+        faresByAirline[al] = { price: entry.price, link, duration: entry.duration ?? null };
       }
     });
     return faresByAirline;
@@ -124,6 +124,7 @@ export async function GET(request) {
       ...a,
       price: fare?.price ?? null,
       booking_link: fare?.link ?? fallbackLink,
+      duration: fare?.duration ?? null,
     };
   });
 

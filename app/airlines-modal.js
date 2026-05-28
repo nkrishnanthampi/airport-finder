@@ -82,6 +82,13 @@ export default function AirlinesModal({ sourceCity, sourceCountry, sourceIata, d
         const primary = sourceIata ? airlines.filter((a) => a.source_iata === sourceIata) : [];
         const others  = sourceIata ? airlines.filter((a) => a.source_iata !== sourceIata) : airlines;
 
+        const fmtDuration = (mins) => {
+          if (!mins) return null;
+          const h = Math.floor(mins / 60);
+          const m = mins % 60;
+          return h > 0 ? `${h}h ${m > 0 ? `${m}m` : ""}`.trim() : `${m}m`;
+        };
+
         const renderRow = (a) => (
           <div
             key={`${a.iata_code}-${a.source_iata}`}
@@ -106,18 +113,25 @@ export default function AirlinesModal({ sourceCity, sourceCountry, sourceIata, d
               <p className="font-semibold text-slate-800 text-sm">{a.airline_name}</p>
               <p className="text-xs text-slate-500 truncate">{a.source_airport}</p>
             </div>
-            {a.price !== null ? (
-              <div className="text-right shrink-0">
+            <div className="text-right shrink-0 flex flex-col items-end gap-0.5">
+              {a.price !== null ? (
                 <a href={a.booking_link} target="_blank" rel="noopener noreferrer" className="text-green-700 font-bold text-base hover:underline">
                   £{a.price}
                 </a>
+              ) : (
+                <a href={a.booking_link} target="_blank" rel="noopener noreferrer" className="text-sky-600 text-sm hover:underline">
+                  Search Fares →
+                </a>
+              )}
+              {a.price !== null && (
                 <p className="text-xs text-slate-400">one-way</p>
-              </div>
-            ) : (
-              <a href={a.booking_link} target="_blank" rel="noopener noreferrer" className="text-sky-600 text-sm hover:underline shrink-0">
-                Search Fares →
-              </a>
-            )}
+              )}
+              {fmtDuration(a.duration) && (
+                <p className="text-xs text-slate-500 flex items-center gap-0.5">
+                  <span className="text-slate-400">⏱</span>{fmtDuration(a.duration)}
+                </p>
+              )}
+            </div>
           </div>
         );
 
